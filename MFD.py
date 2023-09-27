@@ -10,7 +10,6 @@ from numba import njit, prange
 from scipy.stats import norm
 import warnings
 warnings.simplefilter("ignore", category=FutureWarning)
-import seaborn as sns
 import time
 
 ffspeed = 45

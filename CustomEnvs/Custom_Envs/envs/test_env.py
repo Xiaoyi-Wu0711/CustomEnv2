@@ -986,7 +986,8 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
                  One_dim = False, 
                  Best_toll_initialization = False, 
                  Reward_shifting = True,
-                 Random_mode = False 
+                 Random_mode = False, 
+                 Absolute_change_mode = False, 
                  ):
         super().__init__()
         self.params = {'alpha':1.1, 'omega':0.9, 'theta':5*10**(-1), 'tao':90, 'Number_of_user':3700 } # alpha is unused
@@ -997,7 +998,7 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         self.best_toll_initialization = Best_toll_initialization
         self.reward_shifting = Reward_shifting
         self.one_dim = One_dim
-
+        self.absolute_change_mode = Absolute_change_mode
         self.space_shape = space_shape
         
         self.action_space =  spaces.Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]), shape=(3,), dtype=np.float32)
@@ -1057,9 +1058,13 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
 
         elif self.best_toll_initialization and self.one_dim:
             self.toll_mu = 0.23321407
-        
+            self.toll_sigma =  0.76213885
+            self.toll_A = - 0.02265058
+
         elif not self.best_toll_initialization and self.one_dim:
             self.toll_mu = random.random()*2 -1
+            self.toll_sigma =  0.76213885
+            self.toll_A = - 0.02265058
         
         else:
             self.toll_mu = random.random()*2 -1
@@ -1088,32 +1093,53 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         return observation, info 
     
     def step(self, action):
-        action = action
-        if self.toll_mu+action[0] < -1:
-            self.toll_mu = -1.0
-        elif self.toll_mu+action[0]> 1:
-            self.toll_mu = 1.0
-        else:
-            self.toll_mu+=action[0]
-
-        if self.one_dim:
-            tollparameters = np.array([120*self.toll_mu+420, 10*0.7621388+60, 2.95469884]) # 2*self.mu + 7
-        else:
-            if self.toll_sigma+action[1] < -1:
-                self.toll_sigma = -1.0
-            elif self.toll_sigma+action[1]  > 1:
-                self.toll_sigma = 1.0
+        if self.absolute_change_mode:  # 
+            if action[0] < -1:
+                self.toll_mu = -1.0
+            elif action[0]> 1:
+                self.toll_mu = 1.0
             else:
-                self.toll_sigma+=action[1]
+                self.toll_mu = action[0]
 
-            if  self.toll_A+action[2]  < -1:
-                self.toll_A = -1.0
-            elif self.toll_A+action[2] > 1:
-                self.toll_A = 1.0
+            if not self.one_dim:
+                if self.toll_sigma < -1:
+                    self.toll_sigma = -1.0
+                elif self.toll_sigma  > 1:
+                    self.toll_sigma = 1.0
+                else:
+                    self.toll_sigma = action[1]
+
+                if  self.toll_A  < -1:
+                    self.toll_A = -1.0
+                elif self.toll_A > 1:
+                    self.toll_A = 1.0
+                else:
+                    self.toll_A = action[2]
+        
+        else: 
+            if self.toll_mu+action[0] < -1:
+                self.toll_mu = -1.0
+            elif self.toll_mu+action[0]> 1:
+                self.toll_mu = 1.0
             else:
-                self.toll_A += action[2]
+                self.toll_mu+=action[0]
 
-            tollparameters = np.array([120*self.toll_mu+420, 10*self.toll_sigma+60, 2*self.toll_A+3])
+            if not self.one_dim:
+                if self.toll_sigma+action[1] < -1:
+                    self.toll_sigma = -1.0
+                elif self.toll_sigma+action[1]  > 1:
+                    self.toll_sigma = 1.0
+                else:
+                    self.toll_sigma+=action[1]
+
+                if  self.toll_A+action[2]  < -1:
+                    self.toll_A = -1.0
+                elif self.toll_A+action[2] > 1:
+                    self.toll_A = 1.0
+                else:
+                    self.toll_A += action[2]
+
+        tollparameters = np.array([120*self.toll_mu+420, 10*self.toll_sigma+60, 2*self.toll_A+3])
         # todo
         # if step duration is 1, change the toll profile on daily basis 
         # if step duration is 30, change the toll profile on 30-day basis 
@@ -1127,7 +1153,7 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         if self.reward_shifting:
             reward = self.last_AITT_daily - AITT_daily
         else: 
-            reward = 80 - 2*AITT_daily
+            reward =  - AITT_daily
         self.last_AITT_daily = AITT_daily
         
         if self.one_dim:
