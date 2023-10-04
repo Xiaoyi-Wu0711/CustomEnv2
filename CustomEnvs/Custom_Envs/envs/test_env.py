@@ -995,11 +995,11 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         self.simulation_day_num = simulation_day_num
         self.save_episode_freq = save_episode_freq
        
-        self.best_toll_initialization = Best_toll_initialization
-        self.reward_shifting = Reward_shifting
-        self.one_dim = One_dim
-        self.absolute_change_mode = Absolute_change_mode
-        self.space_shape = space_shape
+        self.best_toll_initialization = Best_toll_initialization # if true, initialize the toll fee with best toll profile. Else will be random
+        self.reward_shifting = Reward_shifting # if true, use relative reward. Else will be absolute reward. 
+        self.one_dim = One_dim # if true, only one dim of action will be change. Else will 3 dim action. 
+        self.absolute_change_mode = Absolute_change_mode # if true, action will absolute value of toll profile. Else will be absolute action. 
+        self.space_shape = space_shape 
         
         self.action_space =  spaces.Box(low=np.array([-1.0, -1.0, -1.0]), high=np.array([1.0, 1.0, 1.0]), shape=(3,), dtype=np.float32)
         if self.one_dim:
@@ -1008,8 +1008,8 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         self.observation_space = spaces.Box(low= -99999, high= 99999,\
                                                 shape=space_shape, dtype=np.float64) # include more observations for a broader observation space
 
-        self.render_mode = False
-        self.random = Random_mode # random policy
+        self.render_mode = False 
+        self.random = Random_mode #if true, will run random policy. Else run RL policy
         self.tt_eps = [] # daily average travel time
         self.sw_eps = [] # social welfare
         self.mp_eps = [] # market price
@@ -1093,7 +1093,7 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
         return observation, info 
     
     def step(self, action):
-        if self.absolute_change_mode:  # 
+        if self.absolute_change_mode: 
             if action[0] < -1:
                 self.toll_mu = -1.0
             elif action[0]> 1:
@@ -1140,10 +1140,7 @@ class CommuteEnv_testing(gym.Env): # env reset for each training/testing
                     self.toll_A += action[2]
 
         tollparameters = np.array([120*self.toll_mu+420, 10*self.toll_sigma+60, 2*self.toll_A+3])
-        # todo
-        # if step duration is 1, change the toll profile on daily basis 
-        # if step duration is 30, change the toll profile on 30-day basis 
-        # for i in range(self.step_length):
+    
         state_encode, vehicle_information, market_price, pt_share_number, sw  = self.sim.RL_simulateOneday(tollparameters, self.day, state_aggravate) # 5 days social welfare
         
         observation = state_encode.reshape(self.space_shape)
