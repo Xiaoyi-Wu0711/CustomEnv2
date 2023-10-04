@@ -1,41 +1,9 @@
-from collections import namedtuple
-from itertools import count
-import random
-import os, time
-import numpy as np
-import Custom_Envs
-import torch
-import torch.nn as nn
+
+
 from stable_baselines3.common.env_checker import check_env
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.distributions import Normal, Categorical
-from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
-from torch.utils.tensorboard import SummaryWriter
 from time import sleep
-import datetime
-import argparse
-import pickle
-from collections import namedtuple
-from itertools import count
-import random
 import os, time
 import numpy as np
-import sys
-import logging
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torch.distributions import Normal
-from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
-from torch.utils.tensorboard import SummaryWriter
-from time import sleep
-import datetime
-import random
-import numpy as np
-import pandas as pd
-from numba import njit, prange
 
 #IMPORTS
 import random
@@ -51,10 +19,6 @@ from stable_baselines3.common.vec_env import VecNormalize, VecFrameStack
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 import seaborn as sns
-
-
-import numpy as np
-
 import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.wrappers import NormalizeObservation
@@ -108,9 +72,11 @@ def main():
     print(" env: ", env_name)
     print(" learning_rate ", learning_rate)
     print(" entropy: ", entropy_coef)
+
     if resume: 
         resume_record = " resume from: " + resume_count + " "+resume_path + " "+str(resume_step) + "_steps"
         print(resume_record)
+
     if train: 
         save_dir = "./results/PPO_"+time.asctime(time.localtime(start_time))
         isExist = os.path.exists(save_dir)
@@ -125,9 +91,9 @@ def main():
                 Best_toll_initialization = best_toll_initialization, 
                 Reward_shifting = reward_shifting
             )
-        env = NormalizeObservation(env)
+        env = NormalizeObservation(env) # normalize observation
         checkpoint_callback = CheckpointCallback(save_freq= int(checkpoint_save_episode*simulation_day_num), 
-                                                 save_path=(save_dir+"/logs/"), name_prefix="PPO")
+                                                 save_path=(save_dir+"/logs/"), name_prefix="PPO") 
         if resume == True: 
             model_path = "./results/" + resume_path +"/logs/PPO_"+str(resume_step)+"_steps"
             model = PPO.load(model_path, print_system_info=True, env=env)
